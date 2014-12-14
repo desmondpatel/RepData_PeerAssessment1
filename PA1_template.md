@@ -4,7 +4,7 @@ output: html_document:
 keep_md: true
 ---
 # Activity Monitoring Analysis
-The data used in this study is a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
+The data used in this study comes from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
 
 The dataset is in a csv file format. There are three variables included in this dataset:<br/>
 **steps**: Number of steps taking in a 5-minute interval (missing values are coded as NA)  
@@ -51,11 +51,11 @@ head(actdf)
 ```
 
 ```r
-paste("Number of rows in the dataset=", nrow(actdf))
+paste("Number of rows in the dataset =", nrow(actdf))
 ```
 
 ```
-## [1] "Number of rows in the dataset= 17568"
+## [1] "Number of rows in the dataset = 17568"
 ```
 
 
@@ -66,17 +66,17 @@ Histogram for mean total number of steps taken per day is given below:
 ```r
 totact <- aggregate(formula = steps ~ date, data = actdf, FUN = sum, na.rm=T)
 
-hist(totact$steps, breaks = "FD", col= "magenta", xlab ="Total steps per day", ylab = "Frequency", main = "Histogram for total number of steps taken per day")
+hist(totact$steps, breaks = "FD", col= "magenta", xlab ="Total steps per day", ylab = "Frequency", main = "Histogram for total number of steps taken per day \n (before imputing missing values)")
 ```
 
 ![plot of chunk histogram1](figure/histogram1-1.png) 
 
 **NOTE 1**: The breaks in the above histogram are calculated using Freedman-Diaconis rule. Please check discussion thread on histograms started by [David Hood (Community TA)](https://class.coursera.org/repdata-016/forum/thread?thread_id=3)
 
-If histogram with the default option for breaks (Sturges) is required, try the following code:
+If histogram with the default option for breaks (Sturges) is required, try the following code (histogram in the figure directory for your reference):
 
 ```r
-hist(totact$steps, col= "red", xlab ="Total steps per day", ylab = "Frequency", main = "Histogram for total number of steps taken per day")
+hist(totact$steps, col= "red", xlab ="Total steps per day", ylab = "Frequency", main = "Histogram for total number of steps taken per day \n (before imputing missing values)")
 ```
 
 The above histogram looks symmetric and hence its mean and median should be more or less same (see below).
@@ -108,9 +108,15 @@ paste("Number of time intervals per day =", nrow(actintavg))
 ### Find the interval with maximum number of steps
 maxavg <- actintavg[which(actintavg$steps==max(actintavg$steps), 
                 arr.ind = TRUE),]
+print(maxavg)
 ```
 
-The time interval 08:35 of each day contains the max number of steps (206.170) averaged across all the days in the two-month period.
+```
+##      time    steps
+## 104 08:35 206.1698
+```
+
+The time interval 08:35 contains the max number of steps (206.170) averaged across all the days in the two-month period.
 
 The following line graph shows the average number of steps taken during each interval (averaged across all days):
 
@@ -162,17 +168,39 @@ paste("Number of days with NAs in the steps column =", days)
 ## [1] "Number of days with NAs in the steps column = 8"
 ```
 
-Values are missing only in steps column. Total number of values missing are 2304. Overall 8 days data are missing for entire days.
+Values are missing only in steps column. Hence total number of rows with NAs are 2304. Overall 8 days data are missing for entire days.
 
 As per the line graph above, number of steps in each 5-minute interval vary. Hence my imputing strategy would be to replace a missing value in a time interval by rounded average number of steps over all other days (where it is not missing) for the same time interval.
 
 **NOTE 2**: The following operation may take couple of minutes to run for the first time. After that, it uses cache. Please be patient. Thanks for your time.
 
 ```r
+### Create new dataset by imputing missing values
 newactdf <- actdf
 for (i in 1:nrow(actdf))
     if (is.na(newactdf[i,]$steps)) 
         newactdf[i,]$steps <- round(actintavg[(i-1)%%288+1,]$steps)
+
+### Display first few rows and number of rows in the new dataset
+head(newactdf)
+```
+
+```
+##         date  time steps
+## 1 2012-10-01 00:00     2
+## 2 2012-10-01 00:05     0
+## 3 2012-10-01 00:10     0
+## 4 2012-10-01 00:15     0
+## 5 2012-10-01 00:20     0
+## 6 2012-10-01 00:25     2
+```
+
+```r
+paste("Number of rows in the new dataset =", nrow(newactdf))
+```
+
+```
+## [1] "Number of rows in the new dataset = 17568"
 ```
 
 Histogram for new mean total number of steps taken per day is given below:
@@ -180,15 +208,15 @@ Histogram for new mean total number of steps taken per day is given below:
 ```r
 newtotact <- aggregate(formula = steps ~ date, data = newactdf, FUN = sum, na.rm=T)
 
-hist(newtotact$steps, breaks = "FD", col= "magenta", xlab ="Total steps per day", ylab = "Frequency", main = "Histogram for total number of steps taken per day")
+hist(newtotact$steps, breaks = "FD", col= "magenta", xlab ="Total steps per day", ylab = "Frequency", main = "Histogram for total number of steps taken per day \n (after imputing missing values)")
 ```
 
 ![plot of chunk histogram3](figure/histogram3-1.png) 
 
-If histogram with the default option for breaks (Sturges) is required, try the following code:
+If histogram with the default option for breaks (Sturges) is required, try the following code (histogram in the figure directory for your reference):
 
 ```r
-hist(newtotact$steps, col= "red", xlab ="Total steps per day", ylab = "Frequency", main = "Histogram for total number of steps taken per day")
+hist(newtotact$steps, col= "red", xlab ="Total steps per day", ylab = "Frequency", main = "Histogram for total number of steps taken per day \n (after imputing missing values)")
 ```
 
 The above histogram looks symmetric and its mean and median should be more or less same (see below).
@@ -239,6 +267,13 @@ for (i in 1:nrow(newactdf)){
 }
 
 newactdf$daytype <- as.factor(newactdf$daytype)
+
+### Check the data type of daytype variable
+str(newactdf$daytype)
+```
+
+```
+##  Factor w/ 2 levels "weekday","weekend": 1 1 1 1 1 1 1 1 1 1 ...
 ```
 
 Let us now estimate activity patterns (average number of steps) in the weekdays and weekends.
@@ -282,7 +317,7 @@ lower <- with(newactintavg,as.POSIXct(min(time),"%H:%M"))
 upper <- with(newactintavg,as.POSIXct(max(time)+1,"%H:%M")-1)
 limits <- c(lower,upper)
 
-panelplots <- ggplot(newactintavg, aes(x = time, y = steps, group = daytype, colour = daytype)) +labs(title = "Differences in activity patterns \n (weekdays vs weekends)", x = "Time interval (5 minutes)", y = "Average number of steps") + geom_line() + facet_grid(daytype ~ .) + scale_x_datetime(labels = date_format("%H:%M"), breaks = date_breaks(width = "1 hour"), limits = limits) + theme(axis.text.x=element_text(angle=90, vjust=0.5)) + theme(plot.title = element_text(size=20, face="bold", vjust=2)) + theme(legend.title = element_text(size = 12)) + labs(size = 15)
+panelplots <- ggplot(newactintavg, aes(x = time, y = steps, group = daytype, colour = daytype)) +labs(title = "Differences in activity patterns \n (weekdays vs weekends)", x = "Time interval (5 minutes)", y = "Average number of steps") + geom_line(size = 1) + facet_grid(daytype ~ .) + scale_x_datetime(labels = date_format("%H:%M"), breaks = date_breaks(width = "1 hour"), limits = limits) + theme(axis.text.x=element_text(angle=90, vjust=0.5)) + theme(plot.title = element_text(size=20, face="bold", vjust=2)) + theme(axis.title = element_text(size = 15)) + theme(axis.text = element_text(size = 12)) + theme(strip.text.y = element_text(size = 15)) + theme(legend.title = element_text(size = 12)) + theme(legend.text = element_text(size = 12))
 
 print(panelplots)
 ```
@@ -298,26 +333,26 @@ mnwd <- mean(xwd)
 xwe <- newactintavg[which(newactintavg$daytype == "weekend"),]$steps
 mnwe <- mean(xwe)
 
-paste("Average number of steps in the week days =", mnwd)
+paste("Average number of steps in the weekdays =", mnwd)
 ```
 
 ```
-## [1] "Average number of steps in the week days = 35.6086419753086"
+## [1] "Average number of steps in the weekdays = 35.6086419753086"
 ```
 
 ```r
-paste("Average number of steps in the week ends =", mnwe)
+paste("Average number of steps in the weekends =", mnwe)
 ```
 
 ```
-## [1] "Average number of steps in the week ends = 42.3645833333333"
+## [1] "Average number of steps in the weekends = 42.3645833333333"
 ```
 
-The average number of steps in the week end (35.608642) are more than on the week day (42.3645833). But the number of steps between 6AM to 8AM in the week end are significantly less than the corresponding number for the week day.
+The average number of steps in the weekend (42.3645833) are more than the average number of steps in the weekday (35.608642). But the average number of steps between 6 AM to 8 AM in the weekend are significantly less than the corresponding number for the weekday.
 
-**NOTE 4**: Please ignore the t-tests shown below if you have not done *Statistical Inference* course by Johns Hopkins University or any other relevant course.
+**NOTE 4**: Please ignore the t-tests shown below if you have not done *Statistical Inference* course by **Johns Hopkins University** or any other relevant course.
 
-Here are the t-tests on the two average number of steps:
+Here are the t-tests on the two average number of steps (weekday vs weekend):
 
 ```r
 t.test(xwd, xwe, alternative = "less", paired = FALSE, var.equal = FALSE, conf.level = 0.95)
@@ -355,6 +390,6 @@ t.test(xwd, xwe, alternative = "less", paired = TRUE, var.equal = FALSE, conf.le
 ##               -6.755941
 ```
 
-Both the above tests show that the difference in averages is significantly different. This confirms that the average number of steps in the week end are more than on the week day.
+Both the above tests show that the difference in averages is significant at 95% level of confidence (p-value < 0.05). This confirms that the average number of steps in the weekend are more than the average number of steps in the weekday.
 
 **NOTE 5**: Use *library(knitr)* and *knit2html("PA1_template.Rmd")* from console to run this code.
